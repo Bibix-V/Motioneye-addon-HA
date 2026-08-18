@@ -36,7 +36,7 @@ RUN wget -q https://github.com/MotionProject/motion-release/releases/download/4.
     && cd .. \
     && rm -rf motion-4.7.1 motion-4.7.1.tar.gz
 
-# Install MotionEye
+# Install MotionEye 0.44.0
 RUN pip3 install --no-cache-dir \
     babel \
     boto3 \
@@ -44,7 +44,7 @@ RUN pip3 install --no-cache-dir \
     pillow \
     pycurl \
     tornado>=6.5.7 \
-    motioneye
+    motioneye==0.44.0
 
 # Copy rootfs
 COPY rootfs /
