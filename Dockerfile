@@ -1,13 +1,8 @@
-FROM alpine:3.22
+ARG BUILD_FROM="ghcr.io/hassio-addons/base:19.2.0"
+FROM $BUILD_FROM
 
-# Install s6-overlay
-ENV S6_OVERLAY_VERSION=3.2.0.0
-RUN apk add --no-cache curl && \
-    curl -fsSL "https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-noarch.tar.xz" | tar Jx -C /usr/local/share && \
-    curl -fsSL "https://github.com/just-containers/s6-overlay/releases/download/v${S6_OVERLAY_VERSION}/s6-overlay-x86_64.tar.xz" | tar Jx -C /usr/local/share && \
-    tar Jx -f /usr/local/share/s6-overlay-noarch.tar.xz -C / && \
-    tar Jx -f /usr/local/share/s6-overlay-x86_64.tar.xz -C / && \
-    rm -rf /usr/local/share/s6-overlay*.tar.xz /var/cache/apk/*
+# Upgrade all packages to sync versions
+RUN apk upgrade --no-cache
 
 # Install runtime dependencies
 RUN apk add --no-cache \
