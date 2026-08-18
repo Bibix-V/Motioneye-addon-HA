@@ -1,10 +1,7 @@
 ARG BUILD_FROM="ghcr.io/hassio-addons/base:19.2.0"
 FROM $BUILD_FROM
 
-# Upgrade all packages to sync versions
-RUN apk upgrade --no-cache
-
-# Install runtime dependencies
+# Install runtime dependencies (NO apk upgrade - causes version conflicts)
 RUN apk add --no-cache \
     ffmpeg \
     imagemagick \
