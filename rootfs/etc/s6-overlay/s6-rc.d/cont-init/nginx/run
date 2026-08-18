@@ -1,0 +1,2 @@
+#!/command/with_contenv s6-applyuidgid
+exec /command/cont-init
