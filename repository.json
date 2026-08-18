@@ -1,5 +1,7 @@
 {
   "name": "motionEye Addon",
   "url": "https://github.com/Bibix-V/motioneye-addon",
-  "maintainer": "Sébastien <sebastien@example.com>"
+  "maintainer": "Sébastien <sebastien@example.com>",
+  "slug": "motioneye-addon",
+  "version": "0.2.0"
 }
