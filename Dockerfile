@@ -1,4 +1,4 @@
-ARG BUILD_FROM="ghcr.io/hassio-addons/base:19.2.0"
+ARG BUILD_FROM="ghcr.io/hassio-addons/base:19.0.0"
 FROM $BUILD_FROM
 
 # Install motion (pre-compiled) and motioneye dependencies
