@@ -7,7 +7,8 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ARG MOTION_VERSION="4.7.1"
 ARG MOTIONEYE_VERSION="0.44.0"
 
-RUN apk add --no-cache --virtual .build-deps \
+RUN apk upgrade --no-cache \
+    && apk add --no-cache --virtual .build-deps \
         autoconf \
         automake \
         build-base \
@@ -21,6 +22,8 @@ RUN apk add --no-cache --virtual .build-deps \
         libwebp-dev \
         linux-headers \
         musl-dev \
+        openssl-dev \
+        pkgconfig \
         python3-dev \
         v4l-utils-dev \
     && apk add --no-cache \
