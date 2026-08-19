@@ -1,4 +1,4 @@
-ARG BUILD_FROM="ghcr.io/hassio-addons/base:19.0.0"
+ARG BUILD_FROM="ghcr.io/hassio-addons/base:19.1.0"
 FROM ${BUILD_FROM}
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
@@ -7,8 +7,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ARG MOTION_VERSION="4.7.1"
 ARG MOTIONEYE_VERSION="0.44.0"
 
-RUN apk upgrade --available --no-cache \
-    && apk add --no-cache --virtual .build-deps \
+RUN apk add --no-cache --virtual .build-deps \
         autoconf \
         automake \
         build-base \
