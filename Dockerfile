@@ -11,7 +11,6 @@ RUN apk add --no-cache --virtual .build-deps \
         autoconf \
         automake \
         build-base \
-        curl-dev \
         ffmpeg-dev \
         gettext-dev \
         git \
@@ -20,8 +19,6 @@ RUN apk add --no-cache --virtual .build-deps \
         libmicrohttpd-dev \
         libwebp-dev \
         linux-headers \
-        musl-dev \
-        openssl-dev \
         pkgconfig \
         python3-dev \
         v4l-utils-dev \
