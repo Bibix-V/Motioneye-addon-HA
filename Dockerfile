@@ -2,7 +2,6 @@
 
 # ── Stage 1: Build a fully-upgraded Alpine base ────────────────────────────────
 FROM alpine:3.22 AS upgraded-base
-SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN apk update && apk upgrade --no-cache \
     && apk add --no-cache \
         bash \
@@ -18,6 +17,8 @@ RUN apk update && apk upgrade --no-cache \
         rsync \
         wget \
     && echo "@community https://dl-cdn.alpinelinux.org/alpine/v3.22/community" >> /etc/apk/repositories
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
 # ── Stage 2: Build motion from source + install motioneye ─────────────────────
 FROM upgraded-base AS builder
@@ -87,7 +88,7 @@ RUN apk add --no-cache \
         libwebp \
         mosquitto-clients \
         v4l-utils \
-        \
+    \
     && addgroup -g 900 -S motioneye \
     && adduser -u 900 -S -h /tmp -s /sbin/nologin -G motioneye motioneye \
     && mkdir -p /data /run/motioneye /tmp/motioneye \
