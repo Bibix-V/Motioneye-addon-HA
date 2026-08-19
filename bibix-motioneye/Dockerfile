@@ -1,62 +1,58 @@
-ARG BUILD_FROM=ghcr.io/hassio-addons/base:19.0.0
-# hadolint ignore=DL3006
-FROM ${BUILD_FROM}
+# syntax=docker/dockerfile:1
 
-# Set shell
+# ── Stage 1: Build a fully-upgraded Alpine base ────────────────────────────────
+FROM alpine:3.22 AS upgraded-base
+RUN apk update && apk upgrade --no-cache \
+    && apk add --no-cache \
+        bash \
+        ca-certificates \
+        curl \
+        ffmpeg \
+        jq \
+        libjpeg-turbo \
+        nginx \
+        openssl \
+        py3-pip \
+        python3 \
+        rsync \
+        wget \
+    && echo "@community https://dl-cdn.alpinelinux.org/alpine/v3.22/community" >> /etc/apk/repositories
+
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-# Build arguments
-ARG BUILD_ARCH
-ARG BUILD_DATE
-ARG BUILD_DESCRIPTION
-ARG BUILD_NAME
-ARG BUILD_REF
-ARG BUILD_REPOSITORY
-ARG BUILD_VERSION
-
-# Setup base
+# ── Stage 2: Build motion from source + install motioneye ─────────────────────
+FROM upgraded-base AS builder
 ARG MOTION_VERSION="4.7.1"
 ARG MOTIONEYE_VERSION="0.44.0"
-# hadolint ignore=DL3003
-RUN \
-    apk add --no-cache --virtual .build-dependencies \
-        autoconf=2.72-r1 \
-        automake=1.17-r1 \
-        build-base=0.5-r3 \
-        curl-dev=8.14.1-r2 \
-        ffmpeg-dev=6.1.2-r2 \
-        gettext-dev=0.24.1-r0 \
-        git=2.49.1-r0 \
-        jpeg-dev=9f-r0 \
-        libjpeg-turbo-dev=3.1.0-r0 \
-        libmicrohttpd-dev=1.0.1-r1 \
-        libwebp-dev=1.5.0-r0 \
-        linux-headers=6.14.2-r0 \
-        musl-dev=1.2.5-r10 \
-        python3-dev=3.12.12-r0 \
-        v4l-utils-dev=1.28.1-r1 \
-    \
+
+RUN apk add --no-cache --virtual .build-deps \
+        autoconf \
+        automake \
+        build-base \
+        curl-dev \
+        ffmpeg-dev \
+        gettext-dev \
+        git \
+        jpeg-dev \
+        libjpeg-turbo-dev \
+        libmicrohttpd-dev \
+        libwebp-dev \
+        linux-headers \
+        musl-dev \
+        pkgconf \
+        python3-dev \
+        v4l-utils-dev \
     && apk add --no-cache \
-        cifs-utils=7.3-r0 \
-        ffmpeg-libs=6.1.2-r2 \
-        ffmpeg=6.1.2-r2 \
-        libintl=0.24.1-r0 \
-        libjpeg-turbo=3.1.0-r0 \
-        libjpeg=9f-r0 \
-        libmicrohttpd=1.0.1-r1 \
-        libwebp=1.5.0-r0 \
-        mosquitto-clients=2.0.21-r0 \
-        nginx=1.28.0-r3 \
-        py3-pip=25.1.1-r0 \
-        python3=3.12.12-r0 \
-        rsync=3.4.1-r1 \
-        v4l-utils=1.28.1-r1 \
+        ffmpeg-libs \
+        libmicrohttpd \
+        libwebp \
+        mosquitto-clients \
+        v4l-utils \
     \
-    && curl -J -L -o /tmp/motion.tar.gz \
+    && curl -fsSL -o /tmp/motion.tar.gz \
         "https://github.com/Motion-Project/motion/archive/release-${MOTION_VERSION}.tar.gz" \
     && mkdir -p /tmp/motion \
-    && tar zxf /tmp/motion.tar.gz -C \
-        /tmp/motion --strip-components=1 \
+    && tar zxf /tmp/motion.tar.gz -C /tmp/motion --strip-components=1 \
     && cd /tmp/motion \
     && autoreconf -fiv \
     && ./configure \
@@ -65,18 +61,17 @@ RUN \
             --without-sqlite3 \
             --prefix=/usr \
             --sysconfdir=/etc \
-    && make install \
+    && make -j$(nproc) install \
     \
-    && pip install --no-cache-dir \
+    && pip install --no-cache-dir --break-system-packages \
         "https://github.com/motioneye-project/motioneye/archive/${MOTIONEYE_VERSION}.tar.gz" \
     \
-    && apk del --no-cache --purge .build-dependencies \
-    && rm -f -r /tmp/*
+    && apk del --no-cache --purge .build-deps \
+    && rm -rf /tmp/motion /root/.cache/pip /root/.cache/pip-build
 
-# Copy root filesystem
-COPY rootfs /
+# ── Stage 3: Final addon image ────────────────────────────────────────────────
+FROM homeassistant/amd64-base:latest
 
-# Build arguments
 ARG BUILD_ARCH
 ARG BUILD_DATE
 ARG BUILD_DESCRIPTION
@@ -85,7 +80,21 @@ ARG BUILD_REF
 ARG BUILD_REPOSITORY
 ARG BUILD_VERSION
 
-# Labels
+COPY rootfs/ /
+
+RUN apk add --no-cache \
+        ffmpeg-libs \
+        libmicrohttpd \
+        libwebp \
+        mosquitto-clients \
+        v4l-utils \
+    \
+    && addgroup -g 900 -S motioneye \
+    && adduser -u 900 -S -h /tmp -s /sbin/nologin -G motioneye motioneye \
+    && mkdir -p /data/motioneye /run/motioneye /tmp/motioneye \
+    && chown -R motioneye:motioneye /data/motioneye /run/motioneye /tmp/motioneye \
+    && chmod 755 /data/motioneye /run/motioneye /tmp/motioneye
+
 LABEL \
     io.hass.name="${BUILD_NAME}" \
     io.hass.description="${BUILD_DESCRIPTION}" \
@@ -104,3 +113,15 @@ LABEL \
     org.opencontainers.image.created=${BUILD_DATE} \
     org.opencontainers.image.revision=${BUILD_REF} \
     org.opencontainers.image.version=${BUILD_VERSION}
+
+# s6-overlay est déjà fourni par homeassistant/amd64-base
+# (fournit /init, /command/with-contenv, etc.)
+
+# ── Copy s6-overlay scripts ────────────────────────────────────────────────────
+COPY rootfs/etc/s6-overlay /etc/s6-overlay
+
+# Remove s6-overlay artifacts that break the parser
+RUN rm -f /etc/s6-overlay/s6-rc.d/s6-services/type \
+    /etc/s6-overlay/s6-rc.d/nginx/dependencies.d/.hermes-tmp.3aRwro
+
+CMD ["/init"]
