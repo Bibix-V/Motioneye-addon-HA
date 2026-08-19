@@ -1,9 +1,0 @@
-#!/command/with_contenv s6-applyuidgid
-
-# Create motioneye config directory
-mkdir -p /data/motioneye
-
-# Check if config file exists, if not create default
-if [ ! -f /data/motioneye/motioneye.conf ]; then
-    echo "No config found, creating default..."
-fi

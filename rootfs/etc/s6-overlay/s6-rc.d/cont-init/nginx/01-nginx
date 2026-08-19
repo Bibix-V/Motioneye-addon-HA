@@ -1,9 +1,0 @@
-#!/command/with_contenv s6-applyuidgid
-
-# Create motion config directory
-mkdir -p /etc/motion
-
-# Check if motion config exists, if not create default
-if [ ! -f /etc/motion/motion.conf ]; then
-    echo "No motion config found, creating default..."
-fi
