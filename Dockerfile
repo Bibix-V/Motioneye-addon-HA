@@ -1,19 +1,30 @@
-ARG BUILD_FROM="ghcr.io/hassio-addons/base:19.0.0"
-FROM ${BUILD_FROM}
+# syntax=docker/dockerfile:1
 
+# ── Stage 1: Build a fully-upgraded Alpine base ────────────────────────────────
+FROM alpine:3.22 AS upgraded-base
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+RUN apk update && apk upgrade --no-cache \
+    && apk add --no-cache \
+        bash \
+        ca-certificates \
+        curl \
+        ffmpeg \
+        jq \
+        libjpeg-turbo \
+        nginx \
+        openssl \
+        py3-pip \
+        python3 \
+        rsync \
+        wget \
+    && echo "@community https://dl-cdn.alpinelinux.org/alpine/v3.22/community" >> /etc/apk/repositories
 
-# Setup base
+# ── Stage 2: Build motion from source + install motioneye ─────────────────────
+FROM upgraded-base AS builder
 ARG MOTION_VERSION="4.7.1"
 ARG MOTIONEYE_VERSION="0.44.0"
 
-# Upgrade system packages first to align with APKINDEX
-# The base image 19.0.0 pins older versions that conflict with -dev packages
-# (e.g., musl=1.2.5-r10 vs musl-dev requiring musl=1.2.5-r12)
-RUN \
-    apk upgrade --no-cache \
-    \
-    && apk add --no-cache --virtual .build-deps \
+RUN apk add --no-cache --virtual .build-deps \
         autoconf \
         automake \
         build-base \
@@ -30,28 +41,17 @@ RUN \
         pkgconf \
         python3-dev \
         v4l-utils-dev \
-    \
     && apk add --no-cache \
-        cifs-utils \
         ffmpeg-libs \
-        ffmpeg \
-        libintl \
-        libjpeg-turbo \
-        libjpeg \
         libmicrohttpd \
         libwebp \
         mosquitto-clients \
-        nginx \
-        py3-pip \
-        python3 \
-        rsync \
         v4l-utils \
     \
-    && curl -J -L -o /tmp/motion.tar.gz \
+    && curl -fsSL -o /tmp/motion.tar.gz \
         "https://github.com/Motion-Project/motion/archive/release-${MOTION_VERSION}.tar.gz" \
     && mkdir -p /tmp/motion \
-    && tar zxf /tmp/motion.tar.gz -C \
-        /tmp/motion --strip-components=1 \
+    && tar zxf /tmp/motion.tar.gz -C /tmp/motion --strip-components=1 \
     && cd /tmp/motion \
     && autoreconf -fiv \
     && ./configure \
@@ -60,18 +60,17 @@ RUN \
             --without-sqlite3 \
             --prefix=/usr \
             --sysconfdir=/etc \
-    && make install \
+    && make -j$(nproc) install \
     \
     && pip install --no-cache-dir \
         "https://github.com/motioneye-project/motioneye/archive/${MOTIONEYE_VERSION}.tar.gz" \
     \
     && apk del --no-cache --purge .build-deps \
-    && rm -f -r /tmp/*
+    && rm -rf /tmp/motion /root/.cache/pip /root/.cache/pip-build
 
-# Copy root filesystem
-COPY rootfs/ /
+# ── Stage 3: Final addon image ────────────────────────────────────────────────
+FROM upgraded-base
 
-# Build arguments
 ARG BUILD_ARCH
 ARG BUILD_DATE
 ARG BUILD_DESCRIPTION
@@ -80,7 +79,21 @@ ARG BUILD_REF
 ARG BUILD_REPOSITORY
 ARG BUILD_VERSION
 
-# Labels
+COPY rootfs/ /
+
+RUN apk add --no-cache \
+        ffmpeg-libs \
+        libmicrohttpd \
+        libwebp \
+        mosquitto-clients \
+        v4l-utils \
+        \
+    && addgroup -g 900 -S motioneye \
+    && adduser -u 900 -S -h /tmp -s /sbin/nologin -G motioneye motioneye \
+    && mkdir -p /data /run/motioneye /tmp/motioneye \
+    && chown -R motioneye:motioneye /data /run/motioneye /tmp/motioneye \
+    && chmod 755 /data /run/motioneye /tmp/motioneye
+
 LABEL \
     io.hass.name="${BUILD_NAME}" \
     io.hass.description="${BUILD_DESCRIPTION}" \
