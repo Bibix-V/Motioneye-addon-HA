@@ -3,7 +3,7 @@
   "url": "https://github.com/Bibix-V/motioneye-addon",
   "addons": [
     {
-      "slug": "motioneye",
+      "slug": "bibix-motioneye",
       "version": "0.45.0"
     }
   ]
