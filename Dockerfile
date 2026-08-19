@@ -91,9 +91,9 @@ RUN apk add --no-cache \
     \
     && addgroup -g 900 -S motioneye \
     && adduser -u 900 -S -h /tmp -s /sbin/nologin -G motioneye motioneye \
-    && mkdir -p /data /run/motioneye /tmp/motioneye \
-    && chown -R motioneye:motioneye /data /run/motioneye /tmp/motioneye \
-    && chmod 755 /data /run/motioneye /tmp/motioneye
+    && mkdir -p /data/motioneye /run/motioneye /tmp/motioneye \
+    && chown -R motioneye:motioneye /data/motioneye /run/motioneye /tmp/motioneye \
+    && chmod 755 /data/motioneye /run/motioneye /tmp/motioneye
 
 LABEL \
     io.hass.name="${BUILD_NAME}" \
