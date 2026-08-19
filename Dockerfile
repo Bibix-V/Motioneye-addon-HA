@@ -1,4 +1,4 @@
-ARG BUILD_FROM="ghcr.io/hassio-addons/base:19.1.0"
+ARG BUILD_FROM="ghcr.io/hassio-addons/base:14.1.3"
 FROM ${BUILD_FROM}
 
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
