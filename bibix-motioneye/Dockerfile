@@ -1,7 +1,27 @@
 # syntax=docker/dockerfile:1
 
-# ── Stage 1: Build motion from source ────────────────────────────────────────
-FROM alpine:3.22 AS builder
+# ── Stage 1: Build a fully-upgraded Alpine base ────────────────────────────────
+FROM alpine:3.22 AS upgraded-base
+RUN apk update && apk upgrade --no-cache \
+    && apk add --no-cache \
+        bash \
+        ca-certificates \
+        curl \
+        ffmpeg \
+        jq \
+        libjpeg-turbo \
+        nginx \
+        openssl \
+        py3-pip \
+        python3 \
+        rsync \
+        wget \
+    && echo "@community https://dl-cdn.alpinelinux.org/alpine/v3.22/community" >> /etc/apk/repositories
+
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# ── Stage 2: Build motion from source + install motioneye ─────────────────────
+FROM upgraded-base AS builder
 ARG MOTION_VERSION="4.7.1"
 ARG MOTIONEYE_VERSION="0.44.0"
 
@@ -49,10 +69,10 @@ RUN apk add --no-cache --virtual .build-deps \
     && apk del --no-cache --purge .build-deps \
     && rm -rf /tmp/motion /root/.cache/pip /root/.cache/pip-build
 
-# ── Stage 2: Final addon image ──────────────────────────────────────────────
-ARG BUILD_ARCH
-FROM homeassistant/${BUILD_ARCH}-base:2026.08.2
+# ── Stage 3: Final addon image ────────────────────────────────────────────────
+FROM upgraded-base
 
+ARG BUILD_ARCH
 ARG BUILD_DATE
 ARG BUILD_DESCRIPTION
 ARG BUILD_NAME
@@ -60,15 +80,9 @@ ARG BUILD_REF
 ARG BUILD_REPOSITORY
 ARG BUILD_VERSION
 
-# Install only extra packages not in base image
+COPY rootfs/ /
+
 RUN apk add --no-cache \
-        ffmpeg \
-        jq \
-        libjpeg-turbo \
-        nginx \
-        openssl \
-        rsync \
-        wget \
         ffmpeg-libs \
         libmicrohttpd \
         libwebp \
@@ -78,16 +92,8 @@ RUN apk add --no-cache \
     && addgroup -g 900 -S motioneye \
     && adduser -u 900 -S -h /tmp -s /sbin/nologin -G motioneye motioneye \
     && mkdir -p /data/motioneye /run/motioneye /tmp/motioneye \
-    && chown -R motioneye:motioneye /data/motioneye /run/motioneye /tmp/motioneye
-
-# Copy compiled motion binary
-COPY --from=builder /usr/bin/motion /usr/bin/motion
-
-# Copy compiled motioneye (Python package)
-COPY --from=builder /usr/lib/python3.13/site-packages/motioneye /usr/lib/python3.13/site-packages/motioneye
-
-# Copy rootfs (s6-overlay init system, nginx, motioneye configs)
-COPY rootfs/ /
+    && chown -R motioneye:motioneye /data/motioneye /run/motioneye /tmp/motioneye \
+    && chmod 755 /data/motioneye /run/motioneye /tmp/motioneye
 
 LABEL \
     io.hass.name="${BUILD_NAME}" \
@@ -107,5 +113,3 @@ LABEL \
     org.opencontainers.image.created=${BUILD_DATE} \
     org.opencontainers.image.revision=${BUILD_REF} \
     org.opencontainers.image.version=${BUILD_VERSION}
-
-CMD ["/init"]
