@@ -1,2 +1,0 @@
-type: dependency
-command: /command/s6-rc.d/deps.d/create
