@@ -1,23 +1,22 @@
-#!/command/with-contenv bashio
-# ==============================================================================
+#!/bin/bash
+# =============================================================================
 # Home Assistant Community Add-on: motionEye
 # Creates initial motionEye configuration in case it is non-existing
-# ==============================================================================
+# =============================================================================
+
+set -e
+
 readonly CONF='/data/motioneye/motioneye.conf'
 readonly MOTION='/data/motioneye/motion.conf'
-declare button_type
-declare camera_number
-declare button_command
 
 # Ensure configuration exists
-if ! bashio::fs.directory_exists '/data/motioneye'; then
-    cp -R /etc/motioneye/ /data/motioneye/ \
-        || bashio::exit.nok 'Failed to create initial motionEye configuration'
+if [ ! -d '/data/motioneye' ]; then
+    cp -R /etc/motioneye/ /data/motioneye/
 fi
 
 # Migration
-if bashio::fs.file_exists "${CONF}"; then
-    bashio::log.debug "Running startup migrations"
+if [ -f "${CONF}" ]; then
+    echo "Running startup migrations"
     /usr/lib/python3.13/site-packages/motioneye/scripts/migrateconf.sh "${CONF}"
     find /data/motioneye/ \
         -maxdepth 1 \
@@ -27,42 +26,50 @@ if bashio::fs.file_exists "${CONF}"; then
             /usr/lib/python3.13/site-packages/motioneye/scripts/migrateconf.sh {} \;
 fi
 
-# Configure motion webcontrol access
-if bashio::config.true 'motion_webcontrol'; then
-    bashio::log.info "Enabling motion webcontrol..."
-    bashio::log.warning "This opens up an UNSECURE port to the outside world!"
-    bashio::log.warning "This port has NO SSL & NO AUTHENICATION!"
-    bashio::log.warning "YOU HAVE BEEN WARNED!"
+# Configure motion webcontrol access based on config.json
+MOTION_WEBCONTROL="false"
+if [ -f "/data/options.json" ]; then
+    MOTIONEYE_MOTION_WEBCONTROL=$(jq -r '.motion_webcontrol // false' /data/options.json 2>/dev/null || echo "false")
+    if [ "${MOTIONEYE_MOTION_WEBCONTROL}" = "true" ]; then
+        MOTION_WEBCONTROL="true"
+    fi
+fi
+
+if [ "${MOTION_WEBCONTROL}" = "true" ]; then
+    echo "Enabling motion webcontrol..."
     sed -i "s/webcontrol_localhost on/webcontrol_localhost off/" "$MOTION"
 else
     sed -i "s/webcontrol_localhost off/webcontrol_localhost on/" "$MOTION"
 fi
 
 # Creates initial motionEye media folder in case it is non-existing
-if ! bashio::fs.directory_exists '/share/motioneye'; then
-    mkdir -p /share/motioneye \
-        || bashio::exit.nok 'Failed to create initial motionEye media folder'
+if [ ! -d '/share/motioneye' ]; then
+    mkdir -p /share/motioneye
 fi
 
 # Remove any existing action buttons before recreating
 for old_action in lock unlock light_on light_off alarm_on alarm_off up right \
     down left zoom_in zoom_out preset1 preset2 preset3 preset4 preset5 preset6 \
     preset7 preset8 preset9; do
-    find /data/motioneye/. -name "${old_action}_" -delete
+    find /data/motioneye/. -name "${old_action}_*" -delete 2>/dev/null || true
 done
 
 # Creates action button scripts if any are configured
-if bashio::config.has_value 'action_buttons'; then
-    bashio::log.info "Configuring action buttons."
-    for button in $(bashio::config "action_buttons|keys"); do
-        button_type=$(bashio::config "action_buttons[${button}].type")
-        camera_number=$(bashio::config "action_buttons[${button}].camera")
-        button_command=$(bashio::config "action_buttons[${button}].command")
-        bashio::log.debug "File: ${button_type}_${camera_number}, Command: ${button_command}"
-        {
-            echo "#!/usr/bin/with-contenv bashio"
-            echo "${button_command}"
-        } > "/data/motioneye/${button_type}_${camera_number}"
-        chmod +x "/data/motioneye/${button_type}_${camera_number}"
-    done
+if [ -f "/data/options.json" ]; then
+    ACTION_BUTTONS_JSON=$(jq -r '.action_buttons // empty' /data/options.json 2>/dev/null || echo "")
+    if [ -n "${ACTION_BUTTONS_JSON}" ]; then
+        echo "Configuring action buttons."
+        for button_key in $(echo "${ACTION_BUTTONS_JSON}" | jq -r 'keys[]' 2>/dev/null); do
+            button_type=$(echo "${ACTION_BUTTONS_JSON}" | jq -r ".${button_key}.type" 2>/dev/null)
+            camera_number=$(echo "${ACTION_BUTTONS_JSON}" | jq -r ".${button_key}.camera" 2>/dev/null)
+            button_command=$(echo "${ACTION_BUTTONS_JSON}" | jq -r ".${button_key}.command" 2>/dev/null)
+            if [ -n "${button_type}" ] && [ -n "${button_command}" ]; then
+                {
+                    echo "#!/usr/bin/env bash"
+                    echo "${button_command}"
+                } > "/data/motioneye/${button_type}_${camera_number}"
+                chmod +x "/data/motioneye/${button_type}_${camera_number}"
+            fi
+        done
+    fi
 fi
