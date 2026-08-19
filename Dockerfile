@@ -7,7 +7,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 ARG MOTION_VERSION="4.7.1"
 ARG MOTIONEYE_VERSION="0.44.0"
 
-RUN apk upgrade --no-cache \
+RUN apk upgrade --available --no-cache \
     && apk add --no-cache --virtual .build-deps \
         autoconf \
         automake \
