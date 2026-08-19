@@ -40,6 +40,9 @@
     "keyfile": "privkey.pem",
     "action_buttons": []
   },
+  "build": {
+    "FROM": "alpine:3.22"
+  },
   "schema": {
     "log_level": "list(trace|debug|info|notice|warning|error|fatal)?",
     "motion_webcontrol": "bool",
