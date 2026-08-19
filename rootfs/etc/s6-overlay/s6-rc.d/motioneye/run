@@ -3,6 +3,9 @@
 # Home Assistant Community Add-on: motionEye
 # Runs the motionEye
 # ==============================================================================
+mkdir -p /data/motioneye
+chmod 755 /data/motioneye
+
 declare -a options
 
 bashio::log.info "Starting motionEye..."
