@@ -70,7 +70,7 @@ RUN apk add --no-cache --virtual .build-deps \
     && rm -rf /tmp/motion /root/.cache/pip /root/.cache/pip-build
 
 # ── Stage 3: Final addon image ────────────────────────────────────────────────
-FROM upgraded-base
+FROM homeassistant/amd64-base:2026.08.2
 
 ARG BUILD_ARCH
 ARG BUILD_DATE
