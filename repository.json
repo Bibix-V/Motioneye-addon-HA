@@ -1,7 +1,10 @@
 {
-  "name": "motionEye Addon",
+  "name": "MotionEye Addon (Updated)",
   "url": "https://github.com/Bibix-V/motioneye-addon",
-  "maintainer": "S\u00e9bastien <sebastien@example.com>",
-  "slug": "motioneye-addon",
-  "version": "0.3.0"
+  "addons": [
+    {
+      "slug": "motioneye",
+      "version": "0.44.0"
+    }
+  ]
 }

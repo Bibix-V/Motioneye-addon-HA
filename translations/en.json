@@ -1,4 +1,15 @@
 {
-  "title": "motionEye",
-  "description": "Simple, elegant and feature-rich CCTV/NVR for your cameras"
+  "en": {
+    "name": "motionEye",
+    "description": "Simple, elegant and feature-rich CCTV/NVR for your cameras",
+    "log_level": "Log level",
+    "motion_webcontrol": "Enable motion webcontrol",
+    "ssl": "Use SSL",
+    "certfile": "Certificate file",
+    "keyfile": "Private key file",
+    "action_buttons": "Action buttons",
+    "type": "Type",
+    "camera": "Camera",
+    "command": "Command"
+  }
 }

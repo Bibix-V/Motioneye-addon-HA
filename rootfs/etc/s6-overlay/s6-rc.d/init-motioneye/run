@@ -1,5 +1,4 @@
 #!/command/with-contenv bashio
-# shellcheck shell=bash
 # ==============================================================================
 # Home Assistant Community Add-on: motionEye
 # Creates initial motionEye configuration in case it is non-existing
@@ -19,13 +18,13 @@ fi
 # Migration
 if bashio::fs.file_exists "${CONF}"; then
     bashio::log.debug "Running startup migrations"
-    /usr/lib/python3.12/site-packages/motioneye/scripts/migrateconf.sh "${CONF}"
+    /usr/lib/python3.13/site-packages/motioneye/scripts/migrateconf.sh "${CONF}"
     find /data/motioneye/ \
         -maxdepth 1 \
         -type f \
         -name "thread-*.conf" \
         -exec \
-            /usr/lib/python3.12/site-packages/motioneye/scripts/migrateconf.sh {} \;
+            /usr/lib/python3.13/site-packages/motioneye/scripts/migrateconf.sh {} \;
 fi
 
 # Configure motion webcontrol access
@@ -49,7 +48,7 @@ fi
 for old_action in lock unlock light_on light_off alarm_on alarm_off up right \
     down left zoom_in zoom_out preset1 preset2 preset3 preset4 preset5 preset6 \
     preset7 preset8 preset9; do
-    find /data/motioneye/. -name "${old_action}_*" -delete
+    find /data/motioneye/. -name "${old_action}_" -delete
 done
 
 # Creates action button scripts if any are configured
