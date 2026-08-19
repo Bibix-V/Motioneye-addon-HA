@@ -70,9 +70,9 @@ RUN apk add --no-cache --virtual .build-deps \
     && rm -rf /tmp/motion /root/.cache/pip /root/.cache/pip-build
 
 # ── Stage 3: Final addon image ────────────────────────────────────────────────
-FROM homeassistant/amd64-base:3.20
-
 ARG BUILD_ARCH
+FROM homeassistant/${BUILD_ARCH}-base:3.20
+
 ARG BUILD_DATE
 ARG BUILD_DESCRIPTION
 ARG BUILD_NAME
@@ -80,6 +80,13 @@ ARG BUILD_REF
 ARG BUILD_REPOSITORY
 ARG BUILD_VERSION
 
+# Copy compiled binaries from builder stage
+COPY --from=builder /usr/bin/motion /usr/bin/motion
+COPY --from=builder /usr/bin/motioneye /usr/bin/motioneye
+COPY --from=builder /usr/local/lib/python3*/site-packages/motioneye /usr/local/lib/python3/site-packages/motioneye
+COPY --from=builder /usr/lib/python3*/site-packages/motioneye /usr/lib/python3/site-packages/motioneye
+
+# Copy rootfs (s6-overlay, nginx configs, motioneye configs)
 COPY rootfs/ /
 
 RUN apk add --no-cache \
