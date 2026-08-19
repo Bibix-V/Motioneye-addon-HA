@@ -114,4 +114,9 @@ LABEL \
     org.opencontainers.image.revision=${BUILD_REF} \
     org.opencontainers.image.version=${BUILD_VERSION}
 
+# ── Install s6-overlay (provides /init) ────────────────────────────────────────
+COPY rootfs/etc/s6-overlay /etc/s6-overlay
+
+RUN apk add --no-cache s6-overlay s6-overlay-deps
+
 CMD ["/init"]
