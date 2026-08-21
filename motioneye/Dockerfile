@@ -1,19 +1,40 @@
-# syntax=docker/dockerfile:1
-
-# ── Base image (provided by app-base) ──────────────────────────────────────────
+ARG BUILD_FROM=alpine:3.24.1
+# hadolint ignore=DL3006
 FROM ${BUILD_FROM}
+
+# Environment variables
+ENV \
+    HOME="/root" \
+    LANG="C.UTF-8" \
+    PIP_BREAK_SYSTEM_PACKAGES=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_EXTRA_INDEX_URL="https://wheels.home-assistant.io/musllinux-index/" \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_PREFER_BINARY=1 \
+    PS1="$(whoami)@$(hostname):$(pwd)$ " \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    S6_BEHAVIOUR_IF_STAGE2_FAILS=2 \
+    S6_CMD_WAIT_FOR_SERVICES_MAXTIME=0 \
+    S6_CMD_WAIT_FOR_SERVICES=1 \
+    TERM="xterm-256color"
 
 # Set shell
 SHELL ["/bin/ash", "-o", "pipefail", "-c"]
 
-# ── Build arguments ────────────────────────────────────────────────────────────
+# Install base system
 ARG BUILD_ARCH=amd64
+ARG BASHIO_VERSION="v0.19.0"
+ARG S6_OVERLAY_VERSION="3.2.3.2"
+ARG TEMPIO_VERSION="2026.07.0"
 ARG MOTION_VERSION="4.7.1"
 ARG MOTIONEYE_VERSION="0.44.0"
-
-# ── Install motion from source + motioneye ─────────────────────────────────────
 RUN \
-    apk add --no-cache --virtual .build-dependencies \
+    set -o pipefail \
+    \
+    && apk add --no-cache --virtual .build-dependencies \
+        tar=1.35-r5 \
+        xz=5.8.3-r0 \
         autoconf=2.72-r1 \
         automake=1.17-r1 \
         build-base=0.5-r3 \
@@ -31,10 +52,19 @@ RUN \
         v4l-utils-dev=1.28.1-r1 \
     \
     && apk add --no-cache \
+        cifs-utils=7.3-r0 \
         ffmpeg-libs=7.1.2-r2 \
+        ffmpeg=7.1.2-r2 \
+        libintl=0.24.1-r0 \
+        libjpeg-turbo=3.1.0-r0 \
+        libjpeg=9f-r0 \
         libmicrohttpd=1.0.4-r0 \
         libwebp=1.5.0-r0 \
         mosquitto-clients=2.0.21-r0 \
+        nginx=1.28.0-r3 \
+        py3-pip=25.1.1-r0 \
+        python3=3.13.5-r0 \
+        rsync=3.4.1-r1 \
         v4l-utils=1.28.1-r1 \
     \
     && curl -J -L -o /tmp/motion.tar.gz \
@@ -58,19 +88,22 @@ RUN \
     && apk del --no-cache --purge .build-dependencies \
     && rm -f -r /tmp/*
 
-# ── Copy root filesystem ──────────────────────────────────────────────────────
+# Copy root filesystem
 COPY rootfs /
 
-# ── Entrypoint ─────────────────────────────────────────────────────────────────
+# Copy s6-overlay adjustments
+COPY s6-overlay /package/admin/s6-overlay-${S6_OVERLAY_VERSION}/
+
+# Entrypoint & CMD
 ENTRYPOINT ["/init"]
 
-# ── Build metadata ─────────────────────────────────────────────────────────────
+# Build arguments
 ARG BUILD_DATE
 ARG BUILD_REF
 ARG BUILD_VERSION
 ARG BUILD_REPOSITORY
 
-# ── Labels ─────────────────────────────────────────────────────────────────────
+# Labels
 LABEL \
     io.hass.name="MotionEye" \
     io.hass.description="Simple, elegant and feature-rich CCTV/NVR for your cameras" \
