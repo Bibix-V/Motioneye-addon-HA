@@ -131,11 +131,22 @@ ENV \
     S6_CMD_WAIT_FOR_SERVICES=1 \
     TERM="xterm-256color"
 
-# Copy root filesystem
+# Copier le répertoire s6-overlay officiel (manifestes et scripts core)
+COPY s6-overlay /tmp/s6-overlay-official
+
+# Copier root filesystem
 COPY rootfs /
 
+# Copier les manifestes et scripts s6-overlay officiels vers /etc/s6-overlay/
+# (ne pas écraser les manifestes personnalisés de rootfs)
+RUN mkdir -p /etc/s6-overlay/s6-rc/scripts /etc/s6-overlay/s6-rc/sources && \
+    cp -r /tmp/s6-overlay-official/etc/s6-rc/sources/* /etc/s6-overlay/s6-rc/sources/ && \
+    cp -r /tmp/s6-overlay-official/etc/s6-rc/scripts/* /etc/s6-overlay/s6-rc/scripts/
+
 # Rendre les scripts s6-overlay exécutables
-RUN chmod -R 755 /etc/s6-overlay/s6-rc.d/
+RUN chmod -R 755 /etc/s6-overlay/s6-rc.d/ && \
+    chmod -R 755 /etc/s6-overlay/s6-rc/scripts/ && \
+    chmod -R 755 /etc/s6-overlay/s6-rc/sources/
 
 # Copier les scripts et manifestes s6-overlay vers le package directory attendu par le runtime
 RUN mkdir -p /package/admin/s6-overlay-${S6_OVERLAY_VERSION}/s6-rc.d/ && \
