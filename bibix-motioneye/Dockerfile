@@ -134,6 +134,9 @@ ENV \
 # Copy root filesystem
 COPY rootfs /
 
+# Rendre les scripts s6-overlay exécutables
+RUN chmod -R 755 /etc/s6-overlay/s6-rc.d/
+
 # Copier les scripts et manifestes s6-overlay vers le package directory attendu par le runtime
 RUN mkdir -p /package/admin/s6-overlay-${S6_OVERLAY_VERSION}/s6-rc.d/ && \
     cp -r /etc/s6-overlay/s6-rc.d/* /package/admin/s6-overlay-${S6_OVERLAY_VERSION}/s6-rc.d/
