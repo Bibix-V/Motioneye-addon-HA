@@ -7,10 +7,16 @@
 # Generate Ingress configuration
 bashio::var.json \
     interface "$(bashio::addon.ip_address)" \
-    port "^$(bashio::addon.ingress_port)" \
+    port "^(bashio::addon.ingress_port)" \
     | tempio \
         -template /etc/nginx/templates/ingress.gtpl \
         -out /etc/nginx/servers/ingress.conf
+
+# If ingress config is empty (not running in HA), remove it
+if [ ! -s /etc/nginx/servers/ingress.conf ]; then
+    rm -f /etc/nginx/servers/ingress.conf
+    bashio::log.info "Ingress config is empty - not running in HA mode"
+fi
 
 # Generate direct access configuration, if enabled.
 if bashio::var.has_value "$(bashio::addon.port 80)"; then
@@ -18,9 +24,33 @@ if bashio::var.has_value "$(bashio::addon.port 80)"; then
     bashio::var.json \
         certfile "$(bashio::config 'certfile')" \
         keyfile "$(bashio::config 'keyfile')" \
-        port "^$(bashio::addon.port 80)" \
-        ssl "^$(bashio::config 'ssl')" \
+        port "^(bashio::addon.port 80)" \
+        ssl "^(bashio::config 'ssl')" \
         | tempio \
             -template /etc/nginx/templates/direct.gtpl \
             -out /etc/nginx/servers/direct.conf
 fi
+
+# If no config files exist, create a fallback proxy config
+if [ ! -f /etc/nginx/servers/ingress.conf ] && [ ! -f /etc/nginx/servers/direct.conf ]; then
+    bashio::log.info "No nginx config generated - creating fallback proxy"
+    cat > /etc/nginx/servers/fallback.conf <<'EOF'
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+
+    include /etc/nginx/includes/server_params.conf;
+    include /etc/nginx/includes/proxy_params.conf;
+
+    location / {
+        proxy_pass http://backend;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+EOF
+    bashio::log.info "Fallback proxy config created"
+fi
+
