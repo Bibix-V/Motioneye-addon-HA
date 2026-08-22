@@ -131,3 +131,35 @@ else
 fi
 
 echo "=== END PREVIOUS EVENT WRAPPER DEBUG ==="
+
+echo "=== PREVIOUS RUNTIME CAMERA DEBUG ==="
+
+if [ -f /data/motioneye/runtime-camera-debug.log ]; then
+    cat /data/motioneye/runtime-camera-debug.log
+else
+    echo "No runtime-camera-debug.log found"
+fi
+
+echo "=== END PREVIOUS RUNTIME CAMERA DEBUG ==="
+
+# =============================================================================
+# DEBUG - Vérification différée après démarrage de motionEye
+# =============================================================================
+
+(
+    sleep 15
+
+    {
+        echo "=== DEBUG RUNTIME CAMERA CONFIG ==="
+        date
+
+        for f in /data/motioneye/camera-*.conf; do
+            if [ -f "$f" ]; then
+                echo "--- $f ---"
+                grep -H '^on_event_start' "$f" || true
+            fi
+        done
+
+        echo "=== END DEBUG RUNTIME CAMERA CONFIG ==="
+    } > /data/motioneye/runtime-camera-debug.log 2>&1
+) &
