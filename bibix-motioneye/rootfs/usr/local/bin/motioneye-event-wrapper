@@ -2,17 +2,53 @@
 
 CONF="/data/motioneye/motioneye.conf"
 RELAY="/usr/lib/python3.14/site-packages/motioneye/scripts/relayevent.sh"
+MEYECTL="/usr/lib/python3.14/site-packages/motioneye/meyectl.py"
 
 EVENT="$1"
-CAMERA_ID="$2"
+MOTION_CAMERA_ID="$2"
 
-"${RELAY}" "${CONF}" "${EVENT}" "${CAMERA_ID}"
+echo "=== WRAPPER EVENT ==="
+echo "EVENT=${EVENT}"
+echo "MOTION_CAMERA_ID=${MOTION_CAMERA_ID}"
+
+# ---------------------------------------------------------------------------
+# 1. Notification Home Assistant
+# On l'envoie AVANT relayevent.sh pour qu'un problème du relay interne
+# motionEye ne puisse pas empêcher le webhook Home Assistant.
+# ---------------------------------------------------------------------------
 
 if [ "${EVENT}" = "start" ]; then
+
+    echo "Sending Home Assistant motion webhook..."
+
     /usr/bin/python3 \
-        /usr/lib/python3.14/site-packages/motioneye/meyectl.py \
+        "${MEYECTL}" \
         webhook \
         -c "${CONF}" \
         'POSTj' \
         'http://192.168.0.35:8123/api/webhook/motioneye_044_01M0MZSM4RN8GGBHFH8YRBFNGN?camera_id=2&event_type=motion_detected&src=motioneye'
+
+    WEBHOOK_EXIT=$?
+
+    echo "Home Assistant webhook exit code: ${WEBHOOK_EXIT}"
+
 fi
+
+# ---------------------------------------------------------------------------
+# 2. Relay interne motionEye
+# ---------------------------------------------------------------------------
+
+echo "Calling motionEye relayevent..."
+
+"${RELAY}" \
+    "${CONF}" \
+    "${EVENT}" \
+    "${MOTION_CAMERA_ID}"
+
+RELAY_EXIT=$?
+
+echo "motionEye relayevent exit code: ${RELAY_EXIT}"
+echo "=== END WRAPPER EVENT ==="
+
+# Ne jamais faire échouer le hook Motion
+exit 0
