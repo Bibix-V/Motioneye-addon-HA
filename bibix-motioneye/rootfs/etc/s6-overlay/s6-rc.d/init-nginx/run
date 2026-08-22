@@ -12,7 +12,7 @@ bashio::var.json \
         -template /etc/nginx/templates/ingress.gtpl \
         -out /etc/nginx/servers/ingress.conf
 
-# If ingress config is empty (not running in HA), remove it
+# If ingress config is empty or doesn't exist, remove it
 if [ ! -s /etc/nginx/servers/ingress.conf ]; then
     rm -f /etc/nginx/servers/ingress.conf
     bashio::log.info "Ingress config is empty - not running in HA mode"
