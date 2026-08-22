@@ -97,17 +97,27 @@ done
 echo "=== END DEBUG MOTIONEYE CAMERA CONFIG ==="
 
 # =============================================================================
-# DEBUG - Test motionEye webhook command manually
+# Workaround motionEye 0.44 - on_event_start
 # =============================================================================
 
-echo "=== DEBUG WEBHOOK MANUEL ==="
+echo "Applying motionEye event wrapper workaround..."
 
-/usr/bin/python3 \
-    /usr/lib/python3.14/site-packages/motioneye/meyectl.py \
-    webhook \
-    -c /data/motioneye/motioneye.conf \
-    'POSTj' \
-    'http://192.168.0.35:8123/api/webhook/motioneye_044_01M0MZSM4RN8GGBHFH8YRBFNGN?camera_id=2&event_type=motion_detected&src=motioneye_debug' \
-    || echo "DEBUG WEBHOOK FAILED: $?"
+for f in /data/motioneye/camera-*.conf; do
+    if [ -f "$f" ]; then
+        sed -i \
+            's#^on_event_start .*#on_event_start /usr/local/bin/motioneye-event-wrapper start %t#' \
+            "$f"
+    fi
+done
 
-echo "=== END DEBUG WEBHOOK MANUEL ==="
+echo "motionEye event wrapper workaround applied."
+
+# =============================================================================
+# DEBUG - Vérification finale du hook on_event_start
+# =============================================================================
+
+echo "=== DEBUG FINAL on_event_start ==="
+
+grep -H '^on_event_start' /data/motioneye/camera-*.conf || true
+
+echo "=== END DEBUG FINAL on_event_start ==="
