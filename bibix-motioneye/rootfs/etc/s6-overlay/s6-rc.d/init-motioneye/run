@@ -95,3 +95,19 @@ for f in /data/motioneye/camera-*.conf; do
 done
 
 echo "=== END DEBUG MOTIONEYE CAMERA CONFIG ==="
+
+# =============================================================================
+# DEBUG - Test motionEye webhook command manually
+# =============================================================================
+
+echo "=== DEBUG WEBHOOK MANUEL ==="
+
+/usr/bin/python3 \
+    /usr/lib/python3.14/site-packages/motioneye/meyectl.py \
+    webhook \
+    -c /data/motioneye/motioneye.conf \
+    'POSTj' \
+    'http://192.168.0.35:8123/api/webhook/motioneye_044_01M0MZSM4RN8GGBHFH8YRBFNGN?camera_id=2&event_type=motion_detected&src=motioneye_debug' \
+    || echo "DEBUG WEBHOOK FAILED: $?"
+
+echo "=== END DEBUG WEBHOOK MANUEL ==="
