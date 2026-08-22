@@ -79,7 +79,7 @@ if [ -f "/data/options.json" ]; then
 fi
 
 # =============================================================================
-# DEBUG - Inspect generated Motion camera hooks
+# DEBUG - Inspect generated Motion camera hooks and detection parameters
 # =============================================================================
 
 echo "=== DEBUG MOTIONEYE CAMERA CONFIG ==="
@@ -89,7 +89,7 @@ for f in /data/motioneye/camera-*.conf; do
         echo "--- $f ---"
 
         grep -E \
-'on_event_start|on_event_end|on_movie_end|on_picture_save|target_dir|movie_output|picture_output|event_gap|emulate_motion' \
+'on_event_start|on_event_end|on_movie_end|on_picture_save|target_dir|movie_output|picture_output|event_gap|emulate_motion|threshold|noise|despeckle|minimum_motion_frames|pre_capture|post_capture|stream_motion|locate_motion_mode|motion_img|picture_type' \
         "$f" || true
     fi
 done
@@ -122,6 +122,10 @@ grep -H '^on_event_start' /data/motioneye/camera-*.conf || true
 
 echo "=== END DEBUG FINAL on_event_start ==="
 
+# =============================================================================
+# DEBUG - Log précédent du wrapper
+# =============================================================================
+
 echo "=== PREVIOUS EVENT WRAPPER DEBUG ==="
 
 if [ -f /data/motioneye/event-wrapper-debug.log ]; then
@@ -131,6 +135,10 @@ else
 fi
 
 echo "=== END PREVIOUS EVENT WRAPPER DEBUG ==="
+
+# =============================================================================
+# DEBUG - Configuration runtime précédente
+# =============================================================================
 
 echo "=== PREVIOUS RUNTIME CAMERA DEBUG ==="
 
@@ -156,7 +164,10 @@ echo "=== END PREVIOUS RUNTIME CAMERA DEBUG ==="
         for f in /data/motioneye/camera-*.conf; do
             if [ -f "$f" ]; then
                 echo "--- $f ---"
-                grep -H '^on_event_start' "$f" || true
+
+                grep -E \
+'on_event_start|on_event_end|on_movie_end|on_picture_save|target_dir|movie_output|picture_output|event_gap|emulate_motion|threshold|noise|despeckle|minimum_motion_frames|pre_capture|post_capture|stream_motion|locate_motion_mode|motion_img|picture_type' \
+                "$f" || true
             fi
         done
 
