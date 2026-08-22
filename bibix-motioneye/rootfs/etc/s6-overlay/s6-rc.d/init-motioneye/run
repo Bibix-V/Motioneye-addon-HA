@@ -18,13 +18,16 @@ fi
 # Migration
 if [ -f "${CONF}" ]; then
     echo "Running startup migrations"
-    /usr/lib/python3.13/site-packages/motioneye/scripts/migrateconf.sh "${CONF}"
-    find /data/motioneye/ \
-        -maxdepth 1 \
-        -type f \
-        -name "thread-*.conf" \
-        -exec \
-            /usr/lib/python3.13/site-packages/motioneye/scripts/migrateconf.sh {} \;
+
+    # Migration désactivée temporairement :
+    # /usr/lib/python3.13/site-packages/motioneye/scripts/migrateconf.sh "${CONF}"
+
+    # find /data/motioneye/ \
+    #     -maxdepth 1 \
+    #     -type f \
+    #     -name "thread-*.conf" \
+    #     -exec \
+    #         /usr/lib/python3.13/site-packages/motioneye/scripts/migrateconf.sh {} \;
 fi
 
 # Configure motion webcontrol access based on config.json
