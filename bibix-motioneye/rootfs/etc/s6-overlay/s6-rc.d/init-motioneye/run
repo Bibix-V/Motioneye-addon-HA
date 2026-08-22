@@ -77,3 +77,21 @@ if [ -f "/data/options.json" ]; then
         done
     fi
 fi
+
+# =============================================================================
+# DEBUG - Inspect generated Motion camera hooks
+# =============================================================================
+
+echo "=== DEBUG MOTIONEYE CAMERA CONFIG ==="
+
+for f in /data/motioneye/camera-*.conf; do
+    if [ -f "$f" ]; then
+        echo "--- $f ---"
+
+        grep -E \
+'on_event_start|on_event_end|on_movie_end|on_picture_save|target_dir|movie_output|picture_output|event_gap|emulate_motion' \
+        "$f" || true
+    fi
+done
+
+echo "=== END DEBUG MOTIONEYE CAMERA CONFIG ==="
