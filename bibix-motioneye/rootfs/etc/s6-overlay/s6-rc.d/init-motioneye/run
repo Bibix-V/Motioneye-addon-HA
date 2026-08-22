@@ -121,3 +121,13 @@ echo "=== DEBUG FINAL on_event_start ==="
 grep -H '^on_event_start' /data/motioneye/camera-*.conf || true
 
 echo "=== END DEBUG FINAL on_event_start ==="
+
+echo "=== PREVIOUS EVENT WRAPPER DEBUG ==="
+
+if [ -f /data/motioneye/event-wrapper-debug.log ]; then
+    tail -n 100 /data/motioneye/event-wrapper-debug.log
+else
+    echo "No event-wrapper-debug.log found"
+fi
+
+echo "=== END PREVIOUS EVENT WRAPPER DEBUG ==="
