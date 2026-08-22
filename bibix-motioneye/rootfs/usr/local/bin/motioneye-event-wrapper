@@ -1,0 +1,18 @@
+#!/bin/bash
+
+CONF="/data/motioneye/motioneye.conf"
+RELAY="/usr/lib/python3.14/site-packages/motioneye/scripts/relayevent.sh"
+
+EVENT="$1"
+CAMERA_ID="$2"
+
+"${RELAY}" "${CONF}" "${EVENT}" "${CAMERA_ID}"
+
+if [ "${EVENT}" = "start" ]; then
+    /usr/bin/python3 \
+        /usr/lib/python3.14/site-packages/motioneye/meyectl.py \
+        webhook \
+        -c "${CONF}" \
+        'POSTj' \
+        'http://192.168.0.35:8123/api/webhook/motioneye_044_01M0MZSM4RN8GGBHFH8YRBFNGN?camera_id=2&event_type=motion_detected&src=motioneye'
+fi
