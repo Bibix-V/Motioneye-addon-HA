@@ -67,110 +67,15 @@ if [ -f "/data/options.json" ]; then
             button_type=$(echo "${ACTION_BUTTONS_JSON}" | jq -r ".${button_key}.type" 2>/dev/null)
             camera_number=$(echo "${ACTION_BUTTONS_JSON}" | jq -r ".${button_key}.camera" 2>/dev/null)
             button_command=$(echo "${ACTION_BUTTONS_JSON}" | jq -r ".${button_key}.command" 2>/dev/null)
+
             if [ -n "${button_type}" ] && [ -n "${button_command}" ]; then
                 {
                     echo "#!/usr/bin/env bash"
                     echo "${button_command}"
                 } > "/data/motioneye/${button_type}_${camera_number}"
+
                 chmod +x "/data/motioneye/${button_type}_${camera_number}"
             fi
         done
     fi
 fi
-
-# =============================================================================
-# DEBUG - Inspect generated Motion camera hooks and detection parameters
-# =============================================================================
-
-echo "=== DEBUG MOTIONEYE CAMERA CONFIG ==="
-
-for f in /data/motioneye/camera-*.conf; do
-    if [ -f "$f" ]; then
-        echo "--- $f ---"
-
-        grep -E \
-'on_event_start|on_event_end|on_movie_end|on_picture_save|target_dir|movie_output|picture_output|event_gap|emulate_motion|threshold|noise|despeckle|minimum_motion_frames|pre_capture|post_capture|stream_motion|locate_motion_mode|motion_img|picture_type' \
-        "$f" || true
-    fi
-done
-
-echo "=== END DEBUG MOTIONEYE CAMERA CONFIG ==="
-
-# =============================================================================
-# Workaround motionEye 0.44 - on_event_start
-# =============================================================================
-
-echo "Applying motionEye event wrapper workaround..."
-
-for f in /data/motioneye/camera-*.conf; do
-    if [ -f "$f" ]; then
-        sed -i \
-            's#^on_event_start .*#on_event_start /usr/local/bin/motioneye-event-wrapper start %t#' \
-            "$f"
-    fi
-done
-
-echo "motionEye event wrapper workaround applied."
-
-# =============================================================================
-# DEBUG - Vérification finale du hook on_event_start
-# =============================================================================
-
-echo "=== DEBUG FINAL on_event_start ==="
-
-grep -H '^on_event_start' /data/motioneye/camera-*.conf || true
-
-echo "=== END DEBUG FINAL on_event_start ==="
-
-# =============================================================================
-# DEBUG - Log précédent du wrapper
-# =============================================================================
-
-echo "=== PREVIOUS EVENT WRAPPER DEBUG ==="
-
-if [ -f /data/motioneye/event-wrapper-debug.log ]; then
-    tail -n 100 /data/motioneye/event-wrapper-debug.log
-else
-    echo "No event-wrapper-debug.log found"
-fi
-
-echo "=== END PREVIOUS EVENT WRAPPER DEBUG ==="
-
-# =============================================================================
-# DEBUG - Configuration runtime précédente
-# =============================================================================
-
-echo "=== PREVIOUS RUNTIME CAMERA DEBUG ==="
-
-if [ -f /data/motioneye/runtime-camera-debug.log ]; then
-    cat /data/motioneye/runtime-camera-debug.log
-else
-    echo "No runtime-camera-debug.log found"
-fi
-
-echo "=== END PREVIOUS RUNTIME CAMERA DEBUG ==="
-
-# =============================================================================
-# DEBUG - Vérification différée après démarrage de motionEye
-# =============================================================================
-
-(
-    sleep 15
-
-    {
-        echo "=== DEBUG RUNTIME CAMERA CONFIG ==="
-        date
-
-        for f in /data/motioneye/camera-*.conf; do
-            if [ -f "$f" ]; then
-                echo "--- $f ---"
-
-                grep -E \
-'on_event_start|on_event_end|on_movie_end|on_picture_save|target_dir|movie_output|picture_output|event_gap|emulate_motion|threshold|noise|despeckle|minimum_motion_frames|pre_capture|post_capture|stream_motion|locate_motion_mode|motion_img|picture_type' \
-                "$f" || true
-            fi
-        done
-
-        echo "=== END DEBUG RUNTIME CAMERA CONFIG ==="
-    } > /data/motioneye/runtime-camera-debug.log 2>&1
-) &
