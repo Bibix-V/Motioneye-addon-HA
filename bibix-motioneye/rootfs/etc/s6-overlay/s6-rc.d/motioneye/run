@@ -5,6 +5,18 @@
 # ==============================================================================
 mkdir -p /data/motioneye
 chmod 755 /data/motioneye
+mkdir -p /share/motioneye
+chmod 755 /share/motioneye
+
+# Ensure configuration exists - copy from image if missing
+if [ ! -f '/data/motioneye/motioneye.conf' ]; then
+    bashio::log.info "Copying default configuration..."
+    cp -f /etc/motioneye/motioneye.conf /data/motioneye/
+    cp -f /etc/motioneye/motion.conf /data/motioneye/
+    chmod 644 /data/motioneye/motioneye.conf
+    chmod 644 /data/motioneye/motion.conf
+    bashio::log.info "Configuration copied successfully."
+fi
 
 declare -a options
 

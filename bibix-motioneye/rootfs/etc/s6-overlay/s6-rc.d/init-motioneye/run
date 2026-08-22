@@ -10,8 +10,9 @@ readonly CONF='/data/motioneye/motioneye.conf'
 readonly MOTION='/data/motioneye/motion.conf'
 
 # Ensure configuration exists
-if [ ! -d '/data/motioneye' ]; then
-    cp -R /etc/motioneye/ /data/motioneye/
+if [ ! -d '/data/motioneye' ] || [ ! -f '/data/motioneye/motioneye.conf' ]; then
+    mkdir -p /data/motioneye
+    cp -R /etc/motioneye/* /data/motioneye/
 fi
 
 # Migration
