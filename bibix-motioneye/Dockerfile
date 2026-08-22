@@ -162,9 +162,6 @@ COPY s6-overlay /tmp/s6-overlay-official
 # Copier root filesystem
 COPY rootfs /
 
-# Rendre le wrapper motionEye exécutable
-RUN chmod +x /usr/local/bin/motioneye-event-wrapper
-
 # Copier les manifestes et scripts s6-overlay officiels vers /etc/s6-overlay/
 # (ne pas écraser les manifestes personnalisés de rootfs)
 RUN mkdir -p /etc/s6-overlay/s6-rc/scripts /etc/s6-overlay/s6-rc/sources && \
