@@ -98,8 +98,11 @@ RUN \
 # Install runtime dependencies
 ARG BUILD_VERSION="0.44.0"
 
+# Motion is currently provided by Alpine edge/testing
 RUN \
-    apk add --no-cache \
+    echo "https://dl-cdn.alpinelinux.org/alpine/edge/testing" \
+        >> /etc/apk/repositories \
+    && apk add --no-cache \
         cifs-utils \
         ffmpeg \
         ffmpeg-libs \
@@ -109,6 +112,7 @@ RUN \
         libmicrohttpd \
         libwebp \
         mosquitto-clients \
+        motion@testing \
         nginx \
         python3 \
         rsync \
