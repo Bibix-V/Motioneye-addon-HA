@@ -98,9 +98,8 @@ RUN \
 # Install runtime dependencies
 ARG BUILD_VERSION="0.44.0"
 
-# Motion is provided by Alpine edge/testing
 RUN \
-    echo "https://dl-cdn.alpinelinux.org/alpine/edge/testing" \
+    echo "@testing https://dl-cdn.alpinelinux.org/alpine/edge/testing" \
         >> /etc/apk/repositories \
     && apk add --no-cache \
         cifs-utils \
@@ -118,10 +117,11 @@ RUN \
         rsync \
         v4l-utils
 
-# Verify that the Motion executable is available
+# Verify Motion installation
 RUN \
     echo "=== Motion installation check ===" \
     && command -v motion \
+    && motion -h >/dev/null 2>&1 || true \
     && ls -l "$(command -v motion)"
 
 # Environment variables
