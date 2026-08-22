@@ -91,6 +91,21 @@ RUN \
        --break-system-packages \
        "https://github.com/motioneye-project/motioneye/archive/refs/tags/0.44.0.tar.gz" \
     \
+    && echo "=== Recherche relayevent.sh ===" \
+    && find /usr/lib /usr/local/lib \
+        -type f \
+        -name 'relayevent.sh' \
+        -print \
+        -exec echo "===== CONTENU relayevent.sh =====" \; \
+        -exec sed -n '1,260p' {} \; \
+        2>/dev/null || true \
+    \
+    && echo "=== Recherche _relay_event dans le package motioneye ===" \
+    && grep -R "_relay_event" \
+        /usr/lib/python*/site-packages/motioneye \
+        /usr/local/lib/python*/site-packages/motioneye \
+        2>/dev/null || true \
+    \
     && apk del .build-deps \
     \
     && rm -rf /tmp/*
