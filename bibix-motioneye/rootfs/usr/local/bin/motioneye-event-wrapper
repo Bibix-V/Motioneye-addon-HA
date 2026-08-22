@@ -3,52 +3,47 @@
 CONF="/data/motioneye/motioneye.conf"
 RELAY="/usr/lib/python3.14/site-packages/motioneye/scripts/relayevent.sh"
 MEYECTL="/usr/lib/python3.14/site-packages/motioneye/meyectl.py"
+DEBUG_LOG="/data/motioneye/event-wrapper-debug.log"
 
 EVENT="$1"
 MOTION_CAMERA_ID="$2"
 
-echo "=== WRAPPER EVENT ==="
-echo "EVENT=${EVENT}"
-echo "MOTION_CAMERA_ID=${MOTION_CAMERA_ID}"
+{
+    echo "========================================"
+    echo "$(date '+%Y-%m-%d %H:%M:%S')"
+    echo "EVENT=${EVENT}"
+    echo "MOTION_CAMERA_ID=${MOTION_CAMERA_ID}"
+} >> "${DEBUG_LOG}"
 
-# ---------------------------------------------------------------------------
-# 1. Notification Home Assistant
-# On l'envoie AVANT relayevent.sh pour qu'un problème du relay interne
-# motionEye ne puisse pas empêcher le webhook Home Assistant.
-# ---------------------------------------------------------------------------
-
+# Envoi prioritaire vers Home Assistant
 if [ "${EVENT}" = "start" ]; then
-
-    echo "Sending Home Assistant motion webhook..."
+    echo "Calling Home Assistant webhook..." >> "${DEBUG_LOG}"
 
     /usr/bin/python3 \
         "${MEYECTL}" \
         webhook \
         -c "${CONF}" \
         'POSTj' \
-        'http://192.168.0.35:8123/api/webhook/motioneye_044_01M0MZSM4RN8GGBHFH8YRBFNGN?camera_id=2&event_type=motion_detected&src=motioneye'
+        'http://192.168.0.35:8123/api/webhook/motioneye_044_01M0MZSM4RN8GGBHFH8YRBFNGN?camera_id=2&event_type=motion_detected&src=motioneye' \
+        >> "${DEBUG_LOG}" 2>&1
 
     WEBHOOK_EXIT=$?
 
-    echo "Home Assistant webhook exit code: ${WEBHOOK_EXIT}"
-
+    echo "WEBHOOK_EXIT=${WEBHOOK_EXIT}" >> "${DEBUG_LOG}"
 fi
 
-# ---------------------------------------------------------------------------
-# 2. Relay interne motionEye
-# ---------------------------------------------------------------------------
-
-echo "Calling motionEye relayevent..."
+# Relay interne motionEye
+echo "Calling relayevent.sh..." >> "${DEBUG_LOG}"
 
 "${RELAY}" \
     "${CONF}" \
     "${EVENT}" \
-    "${MOTION_CAMERA_ID}"
+    "${MOTION_CAMERA_ID}" \
+    >> "${DEBUG_LOG}" 2>&1
 
 RELAY_EXIT=$?
 
-echo "motionEye relayevent exit code: ${RELAY_EXIT}"
-echo "=== END WRAPPER EVENT ==="
+echo "RELAY_EXIT=${RELAY_EXIT}" >> "${DEBUG_LOG}"
+echo "Wrapper finished." >> "${DEBUG_LOG}"
 
-# Ne jamais faire échouer le hook Motion
 exit 0
